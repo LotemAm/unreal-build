@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "unreal-build"
+version = "0.1.0"
+description = "Simple Unreal Engine projects build tool"
+authors = []
+readme = "README.md"
+packages = [{include = "unreal_build"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pyyaml = "^6.0.2"
+
+[tool.poetry.scripts]
+unreal-build = 'unreal_build.__main__:main'
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

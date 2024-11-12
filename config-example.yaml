@@ -1,0 +1,18 @@
+# Config can also be as a JSON file
+project:
+    name: "Lyra" # Should be the same as `.uproject` file name
+    path: "C:/repos/Lyra" # Path to root of the project (where `.uproject` file is)
+
+engine:
+    path: "C:/UnrealEngine/UE5.4" # Path to root of Unreal Engine
+
+build:
+    outputPath: "C:/BuildArtifacts"
+    targets:
+        -   platform: Win64
+            target: LyraGame
+            configuration: DebugGame
+        -   platform: Linux
+            target: LyraServer
+            configuration: Shipping
+    override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
