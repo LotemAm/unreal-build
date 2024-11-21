@@ -15,4 +15,19 @@ build:
         -   platform: Linux
             target: LyraServer
             configuration: Shipping
+            deploy:
+                remoteCopy: # Run SCP to copy build to a remote server
+                    host: 1.2.3.4  # server IP or domain
+                    user: ec2-root
+                    destinationPath: "/home/ec2-root/LinuxServer"
+                    certificatePath: "C:/private-key.pem"
     override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
+
+vcs:
+    enabled: false
+    git:
+        repository: ""
+    perforce:
+        workspace: ""
+        username: ""
+        password: ""
