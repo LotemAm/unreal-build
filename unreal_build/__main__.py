@@ -43,9 +43,13 @@ def parse_args():
 
 def load_config(path: Path) -> dict:
     with open(path, 'r') as file:
-        if not yaml:
+        if path.suffix == '.yaml' or path.suffix == '.yml':
+            if yaml is None:
+                raise ImportError("YAML support requires PyYAML to be installed.")
+            return yaml.safe_load(file)
+        if path.suffix == '.json':
             return json.load(file)
-        return yaml.safe_load(file)
+        raise ValueError(f"Unsupported config file format: {path.suffix}")
 
 
 def build_uat_command(
