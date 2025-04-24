@@ -12,6 +12,15 @@ build:
         -   platform: Win64
             target: LyraGame
             configuration: DebugGame
+            deploy:
+                steam:
+                    steamcmdPath: "C:/steamcmd.exe"  # Path to `steamcmd` executable
+                    appID: 480  # Steam game's AppID
+                    depotID: 1000  # Steam depot ID to upload to
+                    auth:  # Auth information for a user that is allowed to upload build to this AppID
+                        user: "steam_username"
+                        steamGuard: true  # If true, you will be prompted to enter Steam Guard code during deployment
+                    testDeployment: true  # Whether to actually perform the deployment, or just run a test
         -   platform: Linux
             target: LyraServer
             configuration: Shipping
@@ -21,12 +30,19 @@ build:
                     user: ec2-root
                     destinationPath: "/home/ec2-root/LinuxServer"
                     certificatePath: "C:/private-key.pem"
+                    killTarget: "MyGameServer"
+                awsEC2:
+                    instanceID: "i-0e8fffffff"
+                    user: "ec2-user"
+                    destinationPath: "/home/ec2-root/LinuxServer"
+                    certificatePath: "C:/private-key.pem"
+                    killTarget: "MyGameServer"
     override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
 
 vcs:
     enabled: false
     git:
-        repository: ""
+        branch: ""  # Default is the current branch
     perforce:
         workspace: ""
         username: ""

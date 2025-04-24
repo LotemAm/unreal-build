@@ -10,6 +10,8 @@ packages = [{include = "unreal_build"}]
 python = "^3.11"
 pyyaml = {version = "^6.0.2", optional = true}
 p4python = {version = "^2024.2.2682690", optional = true}
+vdf = {version = "^3.4", optional = true}
+gitpython = {version = "^3.1.41", optional = true}
 
 [tool.poetry.scripts]
 unreal-build = 'unreal_build.__main__:main'
@@ -17,6 +19,8 @@ unreal-build = 'unreal_build.__main__:main'
 [tool.poetry.extras]
 yaml = ["pyyaml"]
 perforce = ["p4python"]
+git = ["gitpython"]
+steam = ["vdf"]
 
 [build-system]
 requires = ["poetry-core"]

@@ -11,6 +11,7 @@ except ImportError:
     import json
 
 from unreal_build.deploys import deploy_build
+from unreal_build.vcs import do_version_control
 
 
 def parse_args():
@@ -19,11 +20,6 @@ def parse_args():
         '--no-build',
         action='store_true',
         help='Skip building (and only deploy)'
-    )
-    parser.add_argument(
-        '--zip',
-        action='store_true',
-        help='Zip the package after the build is completed'
     )
     parser.add_argument(
         '--no-symbols',
@@ -35,6 +31,12 @@ def parse_args():
         type=Path,
         default='../config.yaml',
         help='Specify config file path'
+    )
+    parser.add_argument(
+        '--override',
+        type=int,
+        nargs='+',
+        help='Specify which build to override'
     )
     return parser.parse_args()
 
@@ -56,7 +58,6 @@ def build_uat_command(
         with_symbols: bool = True,
 ) -> str:
     uat_path = engine_path / 'Engine' / 'Build' / 'BatchFiles' / 'RunUAT.bat'
-    # engine_exe = engine_path / 'Engine' / 'Binaries' / 'Win64' / 'UnrealEditor-Win64-DebugGame-Cmd.exe'
 
     is_server = "server" in target.lower()
     cfg_str = f"-clientconfig={configuration}" if not is_server else f"-server -noclient -serverconfig={configuration}"
@@ -75,47 +76,29 @@ def remove_files_by_ext(directory: Path, extensions: list[str]):
                 f.unlink()
 
 
-def do_version_control(vcs_config: dict):
-    from P4 import P4, P4Exception
-
-    perforce = vcs_config.get('perforce')
-    if perforce is None:
-        logging.warning("VCS is enabled but no perforce settings")
-        return
-    logging.debug("Pulling from Perforce")
-    workspace = perforce['workspace']
-    username = perforce['username']
-    password = perforce['password']
-
-    if not all((workspace, username, password)):
-        logging.warning("Missing Perforce settings")
-        return
-
-    p4 = P4()
-    p4.user = username
-    p4.password = password
-    p4.client = workspace
-    try:
-        p4.connect()
-        p4.run_login()
-        p4.run_sync()
-        logging.info("Perforce synced")
-    except P4Exception as e:
-        # If any errors occur, we'll jump in here. Just log them
-        # and raise the exception up to the higher level
-        if 'File(s) up-to-date.' in str(e):
-            logging.info("Perforce already up-to-date")
-            return
-        raise
+def get_build_overrides(args, config, targets):
+    if args.override is not None:
+        config['build']['override'] = args.override
+    build_overrides = config['build'].get('override')
+    if build_overrides is None:
+        build_overrides = list(range(len(targets)))
+    if not isinstance(build_overrides, (list, tuple)):
+        build_overrides = [build_overrides]
+    return build_overrides
 
 
 def main():
     args = parse_args()
     config = load_config(args.config)
 
+    build_metadata = {
+        'project_path': config['project']['path'],
+    }
+
     if not args.no_build and (vcs_config := config.get('vcs')):
         if vcs_config.get('enabled', False):
-            do_version_control(vcs_config)
+            commit_id = do_version_control(vcs_config)
+            build_metadata['commit_id'] = commit_id
 
     project_file = (Path(config['project']['path']) / config['project']['name']).with_suffix('.uproject')
     engine_path = Path(config['engine']['path'])
@@ -123,11 +106,7 @@ def main():
     output_path.mkdir(parents=True, exist_ok=True)
 
     targets = config['build']['targets']
-    build_overrides = config['build'].get('override')
-    if build_overrides is None:
-        build_overrides = list(range(len(targets)))
-    if not isinstance(build_overrides, (list, tuple)):
-        build_overrides = [build_overrides]
+    build_overrides = get_build_overrides(args, config, targets)
 
     for i, target in enumerate(targets):
         if i not in build_overrides:
@@ -153,20 +132,23 @@ def main():
                 platform,
                 target_name,
                 build_configuration,
-                output_path
+                output_path,
+                with_symbols=not args.no_symbols
             )
             proc = subprocess.Popen(cmd.split())
             return_code = proc.wait()
             logging.info(f"Build process done with return code {return_code}")
-
-            if args.remove_pdb:
-                remove_files_by_ext(build_directory, ['.pdb', '.debug', '.sym'])
-
-            if args.zip:
-                pass
+            if return_code != 0:
+                raise RuntimeError(f"Build failed with return code {return_code}")
 
         if deploy_config := target.get('deploy'):
-            deploy_build(deploy_config, build_directory)
+            deploy_build(
+                deploy_config,
+                build_directory,
+                build_metadata
+            )
+
+        logging.info(f"Done running on {target_name}")
 
 
 if __name__ == '__main__':
