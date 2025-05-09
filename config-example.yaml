@@ -37,6 +37,11 @@ build:
                     destinationPath: "/home/ec2-root/LinuxServer"
                     certificatePath: "C:/private-key.pem"
                     killTarget: "MyGameServer"
+                docker:
+                    image: "lyra-docker-image"  # Should be full URL if you want to push to a registry
+                    tag: "latest"
+                    push: false
+                    
     override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
 
 vcs:

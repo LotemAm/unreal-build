@@ -11,6 +11,9 @@ def deploy_build(deploy_config: dict, build_path: pathlib.Path, build_metadata: 
     elif 'awsEC2' in deploy_config:
         from unreal_build.deploys.aws_ec2 import AWSEC2Deployer
         deployer = AWSEC2Deployer(**deploy_config['awsEC2'])
+    elif 'docker' in deploy_config:
+        from unreal_build.deploys.docker import DockerDeployer
+        deployer = DockerDeployer(**deploy_config['docker'])
     else:
         raise ValueError('Unknown deploy method')
 

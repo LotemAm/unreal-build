@@ -24,13 +24,13 @@ def parse_args():
     parser.add_argument(
         '--no-symbols',
         action='store_true',
-        help='Remove PDB files after build is completed'
+        help='Build without symbols (debug info)'
     )
     parser.add_argument(
         '--config',
         type=Path,
         default='../config.yaml',
-        help='Specify config file path'
+        help='Specify config file path (default: ../config.yaml)'
     )
     parser.add_argument(
         '--override',
@@ -101,7 +101,7 @@ def main():
 
     if not args.no_build and (vcs_config := config.get('vcs')):
         if vcs_config.get('enabled', False):
-            commit_id = do_version_control(vcs_config)
+            commit_id = do_version_control(vcs_config, build_metadata)
             build_metadata['commit_id'] = commit_id
 
     project_file = (Path(config['project']['path']) / config['project']['name']).with_suffix('.uproject')
@@ -124,6 +124,12 @@ def main():
         platform = target['platform']
         target_name = target['target']
         build_configuration = target['configuration']
+
+        build_metadata.update({
+            'platform': platform,
+            'target': target_name,
+            'configuration': build_configuration,
+        })
 
         platform_full = 'Windows' if platform in ['Win64', 'Win32'] else 'Linux'
         build_directory = output_path / f'{platform_full}{"Server" if "Server" in target_name else ""}'

@@ -20,7 +20,7 @@ class SteamPipeDeployer:
 
         build_vdf_path = self.generate_build_vdf(build_dir, build_metadata)
         username = self.steam_auth["user"]
-        steam_cmd = f'{self.steamcmd_path} +@NoPromptForPassword 1 +login {username} +run_app_build {build_vdf_path} +logout +quit'
+        steam_cmd = f'{self.steamcmd_path} +@NoPromptForPassword 1 +login {username} +run_app_build {build_vdf_path} +quit'
         proc = subprocess.Popen(steam_cmd.split())
         return proc.wait() == 0
 

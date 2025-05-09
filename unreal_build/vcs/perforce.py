@@ -15,11 +15,15 @@ class Perforce:
         self.p4.password = password
         self.p4.client = workspace
 
+    def connect(self):
+        if not self.p4.connected():
+            self.p4.connect()
+            self.p4.run_login()
+
     def sync(self):
         try:
             logging.info("Syncing Perforce workspace...")
-            self.p4.connect()
-            self.p4.run_login()
+            self.connect()
             self.p4.run_sync()
             logging.info("Perforce workspace synced successfully")
         except P4Exception as e:
@@ -32,8 +36,7 @@ class Perforce:
     def get_commit_id(self):
         try:
             logging.info("Getting Perforce changelist ID...")
-            self.p4.connect()
-            self.p4.run_login()
+            self.connect()
             changelists = self.p4.run_changes('-m1', '//...')
             if changelists:
                 changelist_id = changelists[0]['change']
