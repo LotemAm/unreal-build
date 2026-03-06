@@ -18,9 +18,12 @@ class SteamPipeDeployer:
         # if self.steam_auth['steamGuard']:
         #     self.authenticate_steam_guard()
 
+        logging.info(f"Logging in to SteamCMD and uploading build for AppID {self.app_id}, DepotID {self.depot_id}..."
+                     f"\n!!!You might be asked to approve login in the Steam app if Steam Guard is enabled!!!")
         build_vdf_path = self.generate_build_vdf(build_dir, build_metadata)
         username = self.steam_auth["user"]
-        steam_cmd = f'{self.steamcmd_path} +@NoPromptForPassword 1 +login {username} +run_app_build {build_vdf_path} +quit'
+        password = self.steam_auth["password"]
+        steam_cmd = f'{self.steamcmd_path} +@NoPromptForPassword 1 +login {username} {password} +run_app_build {build_vdf_path} +quit'
         proc = subprocess.Popen(steam_cmd.split())
         return proc.wait() == 0
 
@@ -85,8 +88,9 @@ class SteamPipeDeployer:
         build_vdf = vdf.VDFDict({'AppBuild': app_build})
 
         # Add exclusions - since these are duplicated keys, can't be done in dict
+        build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = f'*\\Saved*'
         build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = '*.pdb'
-        build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = 'Saved*'
+        build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = 'Manifest_*.txt'
 
         vdf_file = build_dir.parent / 'app_build.vdf'
         with open(vdf_file, 'w') as out_file:

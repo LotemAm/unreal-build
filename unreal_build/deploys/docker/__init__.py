@@ -20,22 +20,29 @@ class DockerDeployer:
         logging.info(f"Building Docker image {self.full_image_name}")
         
         # Copy Dockerfile to build directory
-        dockerfile_path = Path(__file__).parent / "files" / "Dockerfile"
-        shutil.copy(dockerfile_path, build_dir / "Dockerfile")
-        
-        # Process and copy entrypoint script template
-        entrypoint_path = Path(__file__).parent / "files" / "docker_entrypoint.sh.tpl"
-        template = Template(entrypoint_path.read_text())
-        entrypoint_content = template.substitute(
-            target=build_metadata['target']
+        files_dir = Path(__file__).parent / "files"
+        shutil.copy(files_dir / ".dockerignore", build_dir / ".dockerignore")
+
+        target = build_metadata['target']
+        project_name = build_metadata['project_name']
+        target_platform = build_metadata['platform']
+        configuration = build_metadata['configuration']
+
+        executable = f"/server/{project_name}/Binaries/{target_platform}/{target}-{target_platform}-{configuration}"
+
+        template = Template((files_dir / "Dockerfile.tpl").read_text())
+        dockerfile_content = template.substitute(
+            tpl_executable=executable,
+            tpl_project_name=project_name
         )
-        
-        with open(build_dir / "docker-entrypoint.sh", 'w') as f:
-            f.write(entrypoint_content)
+
+        with open(build_dir / "Dockerfile", 'w', newline='\n') as f:
+            f.write(dockerfile_content)
         
         try:
             # Build the Docker image using build directory as context
-            cmd = f"docker build -t {self.full_image_name} {build_dir}"
+            arm64_platform = "--platform linux/arm64" if build_metadata.get('is_arm64', False) else ""
+            cmd = f"docker build {arm64_platform} -t {self.full_image_name} {build_dir}"
             execute_cli_command(cmd)
             
             if self.push:
@@ -46,4 +53,4 @@ class DockerDeployer:
         finally:
             # Clean up Dockerfile and entrypoint script
             (build_dir / "Dockerfile").unlink()
-            (build_dir / "docker-entrypoint.sh").unlink()
+            (build_dir / ".dockerignore").unlink()

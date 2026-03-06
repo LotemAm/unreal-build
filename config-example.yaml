@@ -19,6 +19,7 @@ build:
                     depotID: 1000  # Steam depot ID to upload to
                     auth:  # Auth information for a user that is allowed to upload build to this AppID
                         user: "steam_username"
+                        password: "steam_password"
                         steamGuard: true  # If true, you will be prompted to enter Steam Guard code during deployment
                     testDeployment: true  # Whether to actually perform the deployment, or just run a test
         -   platform: Linux
@@ -41,6 +42,13 @@ build:
                     image: "lyra-docker-image"  # Should be full URL if you want to push to a registry
                     tag: "latest"
                     push: false
+                awsGameLiftContainers:
+                    image: "my-repo/my-game-server"
+                    tag: "latest"
+                    push: true
+                    containerGroupDefinitionName: "MyGameServerGroup"
+                    managedContainerFleetId: "fleet-12345678-1234-1234-1234-123456789012"
+                    region: "us-east-1"
                     
     override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
 

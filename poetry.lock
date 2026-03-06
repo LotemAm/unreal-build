@@ -163,16 +163,20 @@ files = [
 
 [[package]]
 name = "vdf"
-version = "3.4"
+version = "4.0"
 description = "Library for working with Valve's VDF text format"
 optional = true
-python-versions = "*"
+python-versions = ">=3.6"
 groups = ["main"]
 markers = "extra == \"steam\""
-files = [
-    {file = "vdf-3.4-py2.py3-none-any.whl", hash = "sha256:68c1a125cc49e343d535af2dd25074e9cb0908c6607f073947c4a04bbe234534"},
-    {file = "vdf-3.4.tar.gz", hash = "sha256:fd5419f41e07a1009e5ffd027c7dcbe43d1f7e8ef453aeaa90d9d04b807de2af"},
-]
+files = []
+develop = false
+
+[package.source]
+type = "git"
+url = "https://github.com/solsticegamestudios/vdf"
+reference = "HEAD"
+resolved_reference = "f47c683c1330f0fcddec034fd49c26e41acd63f2"
 
 [extras]
 git = ["gitpython"]
@@ -183,4 +187,4 @@ yaml = ["pyyaml"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "a08220621214a139315f456359c80fa309d3d71b7d24da66f25878e319f17d1f"
+content-hash = "5433073369f046d5b0c4fae01250bd89e4bbf9af3e334f1834aa6f7a920bff74"

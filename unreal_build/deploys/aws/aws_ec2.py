@@ -2,8 +2,8 @@ import logging
 import time
 from pathlib import Path
 
-from ..utils import execute_cli_command
-from .remote_copy import RemoteCopyDeployer
+from unreal_build.utils import execute_cli_command
+from unreal_build.deploys.remote_copy import RemoteCopyDeployer
 
 
 class AWSEC2Deployer(RemoteCopyDeployer):

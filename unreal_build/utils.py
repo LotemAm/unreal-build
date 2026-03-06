@@ -1,7 +1,7 @@
 import subprocess
 
 
-def execute_cli_command(cmd: str) -> str:
+def execute_cli_command(cmd: str | list[str]) -> str:
     """
     Execute a CLI command and return its output.
     
@@ -14,7 +14,10 @@ def execute_cli_command(cmd: str) -> str:
     Raises:
         Exception: If the command fails
     """
-    proc = subprocess.Popen(cmd.split(), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if isinstance(cmd, str):
+        cmd = cmd.split()
+
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     stdout, stderr = proc.communicate()
     
     if proc.returncode != 0:
