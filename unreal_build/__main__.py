@@ -1,6 +1,8 @@
 import argparse
 import datetime
+import json
 import logging
+import os
 import subprocess
 from pathlib import Path
 
@@ -8,7 +10,6 @@ try:
     import yaml
 except ImportError:
     yaml = None
-    import json
 
 from unreal_build.deploys import deploy_build
 from unreal_build.vcs import do_version_control
@@ -32,13 +33,13 @@ def parse_args():
         help='Build without symbols (debug info)'
     )
     parser.add_argument(
-        '--config',
+        '-c', '--config',
         type=Path,
         default='../config.yaml',
         help='Specify config file path (default: ../config.yaml)'
     )
     parser.add_argument(
-        '--override',
+        '-o', '--override',
         type=int,
         nargs='+',
         help='Specify which build to override'
@@ -48,9 +49,10 @@ def parse_args():
 
 def load_config(path: Path) -> dict:
     with open(path, 'r') as file:
-        if path.suffix == '.yaml' or path.suffix == '.yml':
+        if path.suffix in ['.yaml', '.yml']:
             if yaml is None:
-                raise ImportError("YAML support requires PyYAML to be installed.")
+                raise ImportError(
+                    "YAML support requires PyYAML to be installed.")
             return yaml.safe_load(file)
         if path.suffix == '.json':
             return json.load(file)
@@ -65,16 +67,19 @@ def build_uat_command(
         configuration: str,
         output_path: Path,
         with_symbols: bool = True,
+        additional_cooker_options: str = None
 ) -> str:
     uat_path = engine_path / 'Engine' / 'Build' / 'BatchFiles' / 'RunUAT.bat'
 
     is_server = "server" in target.lower()
     cfg_str = f"-clientconfig={configuration}" if not is_server else f"-server -noclient -serverconfig={configuration}"
+    cooker_options = f"-additionalcookeroptions=\"{additional_cooker_options}\"" if additional_cooker_options else ""
 
-    return f"{uat_path} BuildCookRun -noP4 -project={project_file} -platform={platform} {cfg_str}" \
-           f" -target={target} -cook -allmaps -build -stage -pak -archive -archivedirectory={output_path}" \
-           f" -skipeditorcontent -compressed" \
-           f" {'' if with_symbols else '-nodebuginfo'}"
+    return f"{uat_path} BuildCookRun -verbose {cooker_options} -noP4" \
+        f" -project={project_file} -platform={platform} {cfg_str}" \
+        f" -target={target} -cook -IterativeCook -allmaps -build -stage -pak" \
+        f" -archive -archivedirectory={output_path} -skipeditorcontent -compressed" \
+        f" {'' if with_symbols else '-nodebuginfo'}"
 
 
 def remove_files_by_ext(directory: Path, extensions: list[str]):
@@ -97,6 +102,13 @@ def get_build_overrides(args, config, targets):
     return build_overrides
 
 
+def get_target_environment(target: dict) -> dict:
+    env = os.environ.copy()
+    if clang_toolchain := target.get('clangToolchainPath'):
+        env['LINUX_MULTIARCH_ROOT'] = str(clang_toolchain)
+    return env
+
+
 def main():
     args = parse_args()
     config = load_config(args.config)
@@ -113,9 +125,11 @@ def main():
         if vcs_config.get('enabled', False):
             commit_id = do_version_control(vcs_config, build_metadata)
             build_metadata['commit_id'] = commit_id
-    project_file = (Path(config['project']['path']) / project_name).with_suffix('.uproject')
+    project_file = (Path(config['project']['path']) /
+                    project_name).with_suffix('.uproject')
     engine_path = Path(config['engine']['path'])
-    output_path = Path(config['build']['outputPath']) / datetime.date.today().isoformat()
+    output_path = Path(config['build']['outputPath']) / \
+        datetime.date.today().isoformat()
     output_path.mkdir(parents=True, exist_ok=True)
 
     targets = config['build']['targets']
@@ -144,11 +158,14 @@ def main():
             'is_arm64': 'arm64' in platform.lower(),
         })
 
-        platform_full = 'Windows' if platform in ['Win64', 'Win32'] else platform
-        build_directory = output_path / f'{platform_full}{"Server" if "Server" in target_name else ""}'
+        platform_full = 'Windows' if platform in [
+            'Win64', 'Win32'] else platform
+        build_directory = output_path / \
+            f'{platform_full}{"Server" if "Server" in target_name else ""}'
 
         if not args.no_build:
-            logging.info(f"Starting build for {platform = } {target_name = } {build_configuration = }\n{'=' * 100}\n")
+            logging.info(
+                f"Starting build for {platform=} {target_name=} {build_configuration=}\n{'=' * 100}\n")
             cmd = build_uat_command(
                 engine_path,
                 project_file,
@@ -156,16 +173,21 @@ def main():
                 target_name,
                 build_configuration,
                 output_path,
-                with_symbols=with_symbols
+                with_symbols=with_symbols,
+                additional_cooker_options=config['build'].get(
+                    'additionalCookerOptions'),
             )
-            proc = subprocess.Popen(cmd.split())
+            proc = subprocess.Popen(
+                cmd.split(), env=get_target_environment(target))
             return_code = proc.wait()
             logging.info(f"Build process done with return code {return_code}")
             if return_code != 0:
-                raise RuntimeError(f"Build failed with return code {return_code}")
+                raise RuntimeError(
+                    f"Build failed with return code {return_code}")
 
         if steam_app_id := target.get('steam_appid.txt'):
-            steam_app_id_path = build_directory / project_name / 'Binaries' / platform / 'steam_appid.txt'
+            steam_app_id_path = build_directory / project_name / \
+                'Binaries' / platform / 'steam_appid.txt'
             logging.info(f"Writing Steam App ID to {steam_app_id_path}")
             steam_app_id_path.write_text(str(steam_app_id))
 
@@ -180,5 +202,6 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
     main()

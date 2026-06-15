@@ -8,6 +8,8 @@ engine:
 
 build:
     outputPath: "C:/BuildArtifacts"
+    override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
+    additionalCookerOptions: null # Any additional options to pass to Unreal's cooker (e.g. command line overrides for config values). Should be a single string, e.g. "-ini:Engine:[/Script/UnrealEd.ProjectPackagingSettings]FullRebuild=true"
     targets:
         -   platform: Win64
             target: LyraGame
@@ -25,6 +27,7 @@ build:
         -   platform: Linux
             target: LyraServer
             configuration: Shipping
+            clangToolchainPath: "C:/UnrealToolchains/v22_clang-16.0.6-centos7/x86_64-unknown-linux-gnu" # Optional. Overrides LINUX_MULTIARCH_ROOT only for this target build
             deploy:
                 remoteCopy: # Run SCP to copy build to a remote server
                     host: 1.2.3.4  # server IP or domain
@@ -49,8 +52,6 @@ build:
                     containerGroupDefinitionName: "MyGameServerGroup"
                     managedContainerFleetId: "fleet-12345678-1234-1234-1234-123456789012"
                     region: "us-east-1"
-                    
-    override: null # 0-based index of which target to build (can be an array of targets). null (or removed) for all
 
 vcs:
     enabled: false
