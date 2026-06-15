@@ -24,6 +24,7 @@ build:
                         password: "steam_password"
                         steamGuard: true  # If true, you will be prompted to enter Steam Guard code during deployment
                     testDeployment: true  # Whether to actually perform the deployment, or just run a test
+                    liveBranch: "alpha"  # Optional: set this uploaded build live on the specified branch
         -   platform: Linux
             target: LyraServer
             configuration: Shipping

@@ -7,12 +7,21 @@ import vdf
 
 
 class SteamPipeDeployer:
-    def __init__(self, steamcmdPath: str, appID: int, depotID: int, auth: dict, testDeployment: bool):
+    def __init__(
+        self,
+        steamcmdPath: str,
+        appID: int,
+        depotID: int,
+        auth: dict,
+        testDeployment: bool,
+        liveBranch: str | None = None,
+    ):
         self.steamcmd_path = steamcmdPath
         self.app_id = appID
         self.depot_id = depotID
         self.steam_auth = auth
         self.is_preview = testDeployment
+        self.set_live_branch = liveBranch
 
     def deploy(self, build_dir: Path, build_metadata: dict):
         # if self.steam_auth['steamGuard']:
@@ -69,7 +78,6 @@ class SteamPipeDeployer:
 
             'Preview': '1' if self.is_preview else '0',
             # 'Local': "..\ContentServer\htdocs", // put content on local content server instead of uploading to Steam
-            # "SetLive": "AlphaTest" // set this build live on a beta branch
 
             'ContentRoot': str(build_dir),
             'BuildOutput': str(build_dir.parent / 'SteamPipeOutput'),
@@ -84,6 +92,9 @@ class SteamPipeDeployer:
                 }
             }
         }
+
+        if self.set_live_branch:
+            app_build['SetLive'] = self.set_live_branch
 
         build_vdf = vdf.VDFDict({'AppBuild': app_build})
 
