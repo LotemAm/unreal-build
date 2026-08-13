@@ -22,6 +22,9 @@ def deploy_build(deploy_config: dict, build_path: pathlib.Path, build_metadata: 
     elif 'awsGameLiftContainers' in deploy_config:
         from unreal_build.deploys.aws.gamelift_containers import GameLiftContainerDeployer
         deployer = GameLiftContainerDeployer(**deploy_config['awsGameLiftContainers'])
+    elif 'edgegap' in deploy_config:
+        from unreal_build.deploys.edgegap import EdgeGapDeployer
+        deployer = EdgeGapDeployer(**deploy_config['edgegap'])
     else:
         raise ValueError('Unknown deploy method')
 

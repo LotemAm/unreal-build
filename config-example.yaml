@@ -53,6 +53,13 @@ build:
                     containerGroupDefinitionName: "MyGameServerGroup"
                     managedContainerFleetId: "fleet-12345678-1234-1234-1234-123456789012"
                     region: "us-east-1"
+                edgegap:
+                    image: "my-repo/my-game-server"
+                    tag: "test"  # Treated as a prefix; final tag is "test-<vcs-version>" (e.g. "test-deadbeef")
+                    push: true
+                    appName: "my-app"  # Edgegap application name
+                    versionName: "my-version"  # Edgegap application version to update with the new image tag
+                    apiToken: "edgegap_api_token"
 
 vcs:
     enabled: false
