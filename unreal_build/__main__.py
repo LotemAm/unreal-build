@@ -77,7 +77,7 @@ def build_uat_command(
 
     return f"{uat_path} BuildCookRun -verbose {cooker_options} -noP4" \
         f" -project={project_file} -platform={platform} {cfg_str}" \
-        f" -target={target} -cook -IterativeCook -allmaps -build -stage -pak" \
+        f" -target={target} -cook -cookincremental -allmaps -build -stage -pak" \
         f" -archive -archivedirectory={output_path} -skipeditorcontent -compressed" \
         f" {'' if with_symbols else '-nodebuginfo'}"
 
