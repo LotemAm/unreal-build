@@ -107,6 +107,16 @@ def get_build_overrides(args, config, targets):
     return build_overrides
 
 
+def get_head_commit_id(project_path: str) -> str | None:
+    """Best-effort HEAD commit of the project, used when VCS sync is disabled."""
+    try:
+        from git import Repo
+        return Repo(project_path).head.commit.hexsha
+    except Exception as e:
+        logging.debug(f"Could not read project commit ID: {e}")
+        return None
+
+
 def get_target_environment(target: dict) -> dict:
     env = os.environ.copy()
     if clang_toolchain := target.get('clangToolchainPath'):
@@ -115,6 +125,8 @@ def get_target_environment(target: dict) -> dict:
 
 
 def main():
+    logging.basicConfig(level=logging.DEBUG,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
     args = parse_args()
     if args.no_color:
         disable_color()
@@ -132,6 +144,8 @@ def main():
         if vcs_config.get('enabled', False):
             commit_id = do_version_control(vcs_config, build_metadata)
             build_metadata['commit_id'] = commit_id
+    if 'commit_id' not in build_metadata:
+        build_metadata['commit_id'] = get_head_commit_id(project_path)
     project_file = (Path(config['project']['path']) /
                     project_name).with_suffix('.uproject')
     engine_path = Path(config['engine']['path'])
@@ -208,6 +222,4 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s - %(levelname)s - %(message)s')
     main()
