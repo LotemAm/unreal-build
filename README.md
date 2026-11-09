@@ -35,4 +35,12 @@ poetry run unreal-build --no-deploy
 
 # Specify config file
 poetry run unreal-build --config another_config.yaml
+
+# Disable coloring of command output
+poetry run unreal-build --no-color
 ```
+
+Output from build and deploy commands is printed in a muted grey palette, with
+errors and warnings kept distinguishable in dim red and dim amber. Coloring is
+disabled automatically when output is redirected to a file or when the
+`NO_COLOR` environment variable is set, and can be forced on with `FORCE_COLOR`.

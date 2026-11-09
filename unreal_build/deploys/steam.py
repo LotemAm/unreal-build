@@ -1,9 +1,10 @@
 import logging
-import subprocess
 from pathlib import Path
 import tkinter as tk
 
 import vdf
+
+from unreal_build.console import run_streamed
 
 
 class SteamPipeDeployer:
@@ -33,8 +34,7 @@ class SteamPipeDeployer:
         username = self.steam_auth["user"]
         password = self.steam_auth["password"]
         steam_cmd = f'{self.steamcmd_path} +@NoPromptForPassword 1 +login {username} {password} +run_app_build {build_vdf_path} +quit'
-        proc = subprocess.Popen(steam_cmd.split())
-        return proc.wait() == 0
+        return run_streamed(steam_cmd.split()) == 0
 
     def get_code_ui(self):
         result = None
@@ -67,8 +67,7 @@ class SteamPipeDeployer:
         code = self.get_code_ui()
         steam_cmd = f'{self.steamcmd_path} set_steam_guard_code {code} +quit'
         logging.info(f"Running steamcmd {steam_cmd}")
-        proc = subprocess.Popen(steam_cmd.split())
-        return proc.wait() == 0
+        return run_streamed(steam_cmd.split()) == 0
 
     def generate_build_vdf(self, build_dir: Path, build_metadata: dict):
         # Read https://partner.steamgames.com/doc/sdk/uploading
@@ -99,7 +98,7 @@ class SteamPipeDeployer:
         build_vdf = vdf.VDFDict({'AppBuild': app_build})
 
         # Add exclusions - since these are duplicated keys, can't be done in dict
-        build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = f'*\\Saved*'
+        build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = '*\\Saved*'
         build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = '*.pdb'
         build_vdf['AppBuild']['Depots'][str(self.depot_id)]['FileExclusion'] = 'Manifest_*.txt'
 

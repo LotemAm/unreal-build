@@ -3,7 +3,6 @@ import datetime
 import json
 import logging
 import os
-import subprocess
 from pathlib import Path
 
 try:
@@ -11,6 +10,7 @@ try:
 except ImportError:
     yaml = None
 
+from unreal_build.console import disable_color, run_streamed
 from unreal_build.deploys import deploy_build
 from unreal_build.vcs import do_version_control
 
@@ -37,6 +37,11 @@ def parse_args():
         type=Path,
         default='../config.yaml',
         help='Specify config file path (default: ../config.yaml)'
+    )
+    parser.add_argument(
+        '--no-color',
+        action='store_true',
+        help='Disable coloring of command output'
     )
     parser.add_argument(
         '-o', '--override',
@@ -111,6 +116,8 @@ def get_target_environment(target: dict) -> dict:
 
 def main():
     args = parse_args()
+    if args.no_color:
+        disable_color()
     config = load_config(args.config)
 
     project_name = config['project']['name']
@@ -141,7 +148,7 @@ def main():
             continue
 
         if target.get('disabled', False):
-            logging.debug(f'Skipping disabled build')
+            logging.debug('Skipping disabled build')
             continue
 
         platform = target['platform']
@@ -177,9 +184,8 @@ def main():
                 additional_cooker_options=config['build'].get(
                     'additionalCookerOptions'),
             )
-            proc = subprocess.Popen(
+            return_code = run_streamed(
                 cmd.split(), env=get_target_environment(target))
-            return_code = proc.wait()
             logging.info(f"Build process done with return code {return_code}")
             if return_code != 0:
                 raise RuntimeError(

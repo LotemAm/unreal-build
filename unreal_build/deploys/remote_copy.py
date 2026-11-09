@@ -1,6 +1,7 @@
 import logging
-import subprocess
 from pathlib import Path
+
+from unreal_build.console import run_streamed
 
 
 class RemoteCopyDeployer:
@@ -34,16 +35,14 @@ class RemoteCopyDeployer:
             return
         logging.info(f"Stopping running server with target {self.kill_target}")
         ssh_cmd = f"ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {self.cert_path} {self.user}@{self.host} pkill -f {self.kill_target}"
-        proc = subprocess.Popen(ssh_cmd, shell=True)
-        return_code = proc.wait()
+        return_code = run_streamed(ssh_cmd, shell=True)
         logging.info(f"SSH process to kill target done with return code {return_code}")
 
     def copy_files(self, build_dir: Path):
         """Copy files to the remote host."""
         logging.info(f"Starting remote copy from {build_dir} to {self.user}@{self.host}:{self.dest_path}")
         scp_cmd = f"scp -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -i {self.cert_path} -r {build_dir} {self.destination}"
-        proc = subprocess.Popen(scp_cmd, shell=True)
-        return_code = proc.wait()
+        return_code = run_streamed(scp_cmd, shell=True)
         logging.info(f"SCP process done with return code {return_code}")
 
     @property

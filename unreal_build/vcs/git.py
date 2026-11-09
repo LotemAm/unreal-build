@@ -1,6 +1,5 @@
 import logging
 from git import Repo
-from pathlib import Path
 
 
 class Git:
