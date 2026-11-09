@@ -1,8 +1,6 @@
 import logging
-import subprocess
 from pathlib import Path
 import shutil
-import os
 from string import Template
 
 from unreal_build.utils import execute_cli_command
@@ -31,13 +29,21 @@ class DockerDeployer:
         executable = f"/server/{project_name}/Binaries/{target_platform}/{target}-{target_platform}-{configuration}"
 
         template = Template((files_dir / "Dockerfile.tpl").read_text())
-        dockerfile_content = template.substitute(
-            tpl_executable=executable,
+        dockerfile_content = template.safe_substitute(
+            tpl_executable="/server/docker_entrypoint.sh",
             tpl_project_name=project_name
+        )
+
+        entrypoint_tpl = Template((files_dir / "docker_entrypoint.sh.tpl").read_text())
+        entrypoint_content = entrypoint_tpl.safe_substitute(
+            tpl_executable=executable,
         )
 
         with open(build_dir / "Dockerfile", 'w', newline='\n') as f:
             f.write(dockerfile_content)
+
+        with open(build_dir / "docker_entrypoint.sh", 'w', newline='\n') as f:
+            f.write(entrypoint_content)
         
         try:
             # Build the Docker image using build directory as context
@@ -54,3 +60,4 @@ class DockerDeployer:
             # Clean up Dockerfile and entrypoint script
             (build_dir / "Dockerfile").unlink()
             (build_dir / ".dockerignore").unlink()
+            (build_dir / "docker_entrypoint.sh").unlink()
