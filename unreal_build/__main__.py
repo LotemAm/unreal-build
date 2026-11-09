@@ -145,7 +145,8 @@ def main():
             commit_id = do_version_control(vcs_config, build_metadata)
             build_metadata['commit_id'] = commit_id
     if 'commit_id' not in build_metadata:
-        build_metadata['commit_id'] = get_head_commit_id(project_path)
+        if commit_id := get_head_commit_id(project_path):
+            build_metadata['commit_id'] = commit_id
     project_file = (Path(config['project']['path']) /
                     project_name).with_suffix('.uproject')
     engine_path = Path(config['engine']['path'])
